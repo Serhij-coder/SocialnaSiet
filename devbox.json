@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.17.0/.schema/devbox.schema.json",
+  "packages": [
+    "rustup",
+    "postgresql_18",
+    "sea-orm-cli",
+    "dbeaver@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "rustup default stable 2>/dev/null || true",
+      "echo 'Welcome to devbox!' > /dev/null"
+    ],
+    "scripts": {
+      "run": [
+        "bash run.sh --run"
+      ],
+      "migrate": [
+        "bash run.sh --migrate"
+      ],
+      "entities": [
+        "bash run.sh --entities"
+      ],
+      "services": [
+        "devbox services up"
+      ],
+      "test": [
+        "echo \"Error: no test specified\" && exit 1"
+      ]
+    }
+  }
+}

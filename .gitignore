@@ -1,0 +1,14 @@
+# --- Rust & Web Build Artifacts ---
+target/
+dist/
+
+# --- IDE & Editor Metadata ---
+.idea/
+.vscode/
+
+# --- Dev Environment ---
+.devbox/
+
+# --- Local Environment & Logs ---
+.env
+*.log

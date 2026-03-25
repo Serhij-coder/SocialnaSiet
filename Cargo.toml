@@ -1,0 +1,25 @@
+[package]
+name = "SocialnaSiet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = [
+  "full",
+  "rt-multi-thread",
+  "macros",
+  "net",
+] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+sea-orm = { version = "2.0.0-rc", features = [
+  "sqlx-postgres",
+  "runtime-tokio",
+  "macros",
+] }
+argon2 = "0.5.3"
