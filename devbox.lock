@@ -1,54 +1,6 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "dbeaver@latest": {
-      "last_modified": "2024-05-12T16:19:40Z",
-      "resolved": "github:NixOS/nixpkgs/3281bec7174f679eabf584591e75979a258d8c40#dbeaver",
-      "source": "devbox-search",
-      "version": "22.2.2",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/vd6gj04q6scjyl47xfy2r3rlpcg9skbn-dbeaver-22.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/vd6gj04q6scjyl47xfy2r3rlpcg9skbn-dbeaver-22.2.2"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/70lsvqd0anxpcrp8nzdq5mfklcaylril-dbeaver-22.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/70lsvqd0anxpcrp8nzdq5mfklcaylril-dbeaver-22.2.2"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/vy9hl98xdxl565wp087z9qgvkxkf7s20-dbeaver-22.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/vy9hl98xdxl565wp087z9qgvkxkf7s20-dbeaver-22.2.2"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/1yxx14968gkznsfkwl6c3s4xvcxhrhdz-dbeaver-22.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/1yxx14968gkznsfkwl6c3s4xvcxhrhdz-dbeaver-22.2.2"
-        }
-      }
-    },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
       "last_modified": "2026-03-11T04:01:32Z",
       "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9?lastModified=1773201692"
@@ -85,6 +37,54 @@
       "plugin_version": "0.0.2",
       "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9#postgresql_18",
       "source": "nixpkg"
+    },
+    "rainfrog@latest": {
+      "last_modified": "2026-03-21T07:29:51Z",
+      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#rainfrog",
+      "source": "devbox-search",
+      "version": "0.3.17",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ig1yxj3ayd5vn4wlp1b01x8yvydmc4y3-rainfrog-0.3.17",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ig1yxj3ayd5vn4wlp1b01x8yvydmc4y3-rainfrog-0.3.17"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/r7hphycs9f9ccg4jpkkwg5n6kyvr0vs0-rainfrog-0.3.17",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/r7hphycs9f9ccg4jpkkwg5n6kyvr0vs0-rainfrog-0.3.17"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/dyvpcwq5gr2wfkm9859dj32jfk3wbv4d-rainfrog-0.3.17",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/dyvpcwq5gr2wfkm9859dj32jfk3wbv4d-rainfrog-0.3.17"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/7y62hp615sdvb9pz6a4ll0c4n3r43n5p-rainfrog-0.3.17",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/7y62hp615sdvb9pz6a4ll0c4n3r43n5p-rainfrog-0.3.17"
+        }
+      }
     },
     "rustup": {
       "plugin_version": "0.0.1",

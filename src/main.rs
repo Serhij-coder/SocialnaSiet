@@ -1,5 +1,3 @@
-use std::println;
-
 use axum::{
     Error, Json, Router,
     http::Result,
@@ -7,6 +5,9 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+
+use dotenvy::dotenv;
+use std::env;
 
 mod api;
 mod db;
@@ -20,8 +21,16 @@ struct Test {
     value: i32,
 }
 
+async fn check_env_vars() {
+    env::var("DATABASE_URL")
+        .expect("Failed to load DATABASE_URL. Ensure variable DATABASE_URL exist in .env");
+}
+
 #[tokio::main]
 async fn main() {
+    dotenv().expect("Error loading .env file. Ensure .env file exist");
+    check_env_vars();
+
     tracing_subscriber::fmt::init();
 
     db::init_db().await;

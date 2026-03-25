@@ -12,3 +12,5 @@ dist/
 # --- Local Environment & Logs ---
 .env
 *.log
+
+README.md

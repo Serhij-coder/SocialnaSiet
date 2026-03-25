@@ -1,5 +1,7 @@
 pub mod users;
 
+use std::env;
+
 use tokio::sync::OnceCell;
 
 use sea_orm::*;
@@ -7,7 +9,10 @@ use sea_orm::*;
 static DB: OnceCell<DatabaseConnection> = OnceCell::const_new();
 
 pub async fn init_db() {
-    let connection = Database::connect("postgresql://serhii@localhost:5432/postgres")
+    let db_url = env::var("DATABASE_URL")
+        .expect("Failed to load DATABASE_URL. Ensure variable DATABASE_URL exist in .env");
+
+    let connection = Database::connect(db_url)
         .await
         .expect("Failed connecting to the database");
 

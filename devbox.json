@@ -4,7 +4,7 @@
     "rustup",
     "postgresql_18",
     "sea-orm-cli",
-    "dbeaver@latest"
+    "rainfrog@latest"
   ],
   "shell": {
     "init_hook": [
@@ -20,6 +20,9 @@
       ],
       "entities": [
         "bash run.sh --entities"
+      ],
+      "viewdb": [
+        "bash run.sh --viewdb"
       ],
       "services": [
         "devbox services up"
