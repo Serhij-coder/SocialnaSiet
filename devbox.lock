@@ -38,6 +38,15 @@
       "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9#postgresql_18",
       "source": "nixpkg"
     },
+    "python313": {
+      "plugin_version": "0.0.4",
+      "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9#python313",
+      "source": "nixpkg"
+    },
+    "python313Packages.grequests": {
+      "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9#python313Packages.grequests",
+      "source": "nixpkg"
+    },
     "rainfrog@latest": {
       "last_modified": "2026-03-21T07:29:51Z",
       "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#rainfrog",

@@ -1,20 +1,33 @@
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::{PasswordHash, PasswordHasher, SaltString, rand_core::OsRng},
 };
 use axum::Json;
 use axum::http::StatusCode;
-use serde_json::{Value, json};
+use sea_orm::DbErr;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+#[derive(Serialize, Deserialize)]
+pub struct TestUser {
+    username: String,
+}
 
 use crate::db::{
     self,
-    users::{User, create_user},
+    users::{User, create_user, is_user},
 };
 
 pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Value>) {
     let username = req.username;
     let nickname = req.nickname;
-    let password = req.password.as_bytes();
+    let password = req.password;
+
+    if let Err(message) = check_data_correctness(&nickname, &username, &password) {
+        return message;
+    }
+
+    let password = password.as_bytes();
 
     let salt = SaltString::generate(&mut OsRng);
 
@@ -47,15 +60,96 @@ pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Va
     };
 
     let is_created = create_user(new_user).await;
-    if let Err(_) = is_created {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"Error": "Failed write user to db"})),
-        );
+
+    match is_created {
+        Ok(_) => (),
+        Err(err) => match err {
+            DbErr::Query(msg)
+                if msg
+                    .to_string()
+                    .to_lowercase()
+                    .contains("duplicate key value violates unique constraint") =>
+            {
+                return (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    Json(json!({"Error": "Username must be unique"})),
+                );
+            }
+            _ => {
+                return (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    Json(json!({"Error": "Unhandled DB error"})),
+                );
+            }
+        },
     }
 
     (
         StatusCode::OK,
         Json(json!({"OK": "User succesfuly created"})),
     )
+}
+
+pub async fn check_username_availability(
+    Json(req): Json<TestUser>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let username = req.username;
+
+    let message = format!("Username is alredy taken for username {username}");
+
+    let is_user = is_user(username).await;
+
+    match is_user {
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"Error": "Failed to read db"})),
+        ),
+        Ok(true) => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": message})),
+        ),
+        Ok(false) => (StatusCode::OK, Json(json!({"OK": "Username is available"}))),
+    }
+}
+
+fn check_data_correctness(
+    nickname: &str,
+    username: &str,
+    password: &str,
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    // Basic bad requests
+    if nickname.trim() == "" || username.trim() == "" || password.trim() == "" {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Nickname or username or password can't be empty"})),
+        ));
+    }
+    if username.trim().contains(" ") {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Username can't contain spaces"})),
+        ));
+    }
+    if password.trim().contains(" ") {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Password can't contain spaces"})),
+        ));
+    }
+
+    // Lengths control
+    if username.len() < 5 {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Username length must be minimum 5 symbols"})),
+        ));
+    }
+    if password.len() < 5 {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Password length must be minimum 5 symbols"})),
+        ));
+    }
+
+    Ok(())
 }

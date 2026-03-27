@@ -4,6 +4,8 @@
     "rustup",
     "postgresql_18",
     "sea-orm-cli",
+    "python313",
+    "python313Packages.grequests",
     "rainfrog@latest"
   ],
   "shell": {

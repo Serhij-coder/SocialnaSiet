@@ -20,7 +20,20 @@ pub async fn create_user(user: User) -> Result<(), DbErr> {
         ..Default::default()
     };
 
-    let res = Users::insert(new_user).exec(get_db()).await?;
+    let _res = Users::insert(new_user).exec(get_db()).await?;
 
     Ok(())
+}
+
+pub async fn is_user(username: String) -> Result<bool, DbErr> {
+    let user = Users::find()
+        .filter(users::Column::Username.eq(username))
+        .count(get_db())
+        .await;
+
+    match user {
+        Err(err) => Err(err),
+        Ok(value) if value != 0 => Ok(true),
+        _ => Ok(false),
+    }
 }
