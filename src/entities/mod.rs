@@ -2,4 +2,5 @@
 
 pub mod prelude;
 
+pub mod topics;
 pub mod users;

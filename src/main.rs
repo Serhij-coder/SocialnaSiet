@@ -14,15 +14,10 @@ mod api;
 mod db;
 mod entities;
 
+use api::topics::new_topic;
 use api::users::{check_username_availability, new_user};
 
-#[derive(Deserialize, Serialize, Debug)]
-struct Test {
-    message: String,
-    value: i32,
-}
-
-async fn check_env_vars() {
+fn check_env_vars() {
     env::var("DATABASE_URL")
         .expect("Failed to load DATABASE_URL. Ensure variable DATABASE_URL exist in .env");
 }
@@ -47,6 +42,7 @@ async fn main() {
             "/check_username_availability",
             post(check_username_availability),
         )
+        .route("/create_topic", post(new_topic))
         .layer(cors);
 
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();

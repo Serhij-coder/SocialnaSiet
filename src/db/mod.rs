@@ -1,3 +1,4 @@
+pub mod topics;
 pub mod users;
 
 use std::env;
