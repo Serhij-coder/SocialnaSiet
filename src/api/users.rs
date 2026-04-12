@@ -13,10 +13,8 @@ pub struct TestUser {
     username: String,
 }
 
-use crate::db::{
-    self,
-    users::{User, create_user, is_user},
-};
+use crate::db::users::{User, create_user, is_user};
+use crate::image::save_image;
 
 pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Value>) {
     let username = req.username;
@@ -26,6 +24,20 @@ pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Va
     if let Err(message) = check_data_correctness(&nickname, &username, &password) {
         return message;
     }
+
+    let profile_picture = if !req.profile_picture.is_empty() {
+        match save_image(req.profile_picture).await {
+            Ok(str) => str,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"Error": format!("{}", e)})),
+                );
+            }
+        }
+    } else {
+        "".to_string()
+    };
 
     let password = password.as_bytes();
 
@@ -57,6 +69,7 @@ pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Va
         username,
         password: password_hash,
         nickname,
+        profile_picture,
     };
 
     let is_created = create_user(new_user).await;

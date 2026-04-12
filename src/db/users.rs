@@ -10,13 +10,21 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub nickname: String,
+    pub profile_picture: String,
 }
 
 pub async fn create_user(user: User) -> Result<(), DbErr> {
+    let profile_picture = if user.profile_picture.is_empty() {
+        ActiveValue::NotSet
+    } else {
+        ActiveValue::Set(user.profile_picture.to_owned().into())
+    };
+
     let new_user = users::ActiveModel {
         username: ActiveValue::Set(user.username.to_owned()),
         password: ActiveValue::Set(user.password.to_owned()),
         nickname: ActiveValue::Set(user.nickname.to_owned()),
+        profile_picture,
         ..Default::default()
     };
 

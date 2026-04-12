@@ -11,7 +11,8 @@
   "shell": {
     "init_hook": [
       "rustup default stable 2>/dev/null || true",
-      "echo 'Welcome to devbox!' > /dev/null"
+      "clear",
+      "echo 'Socialna siet'"
     ],
     "scripts": {
       "run": [

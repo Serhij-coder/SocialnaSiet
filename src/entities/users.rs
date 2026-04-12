@@ -11,6 +11,7 @@ pub struct Model {
     pub username: String,
     pub password: String,
     pub nickname: String,
+    pub profile_picture: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

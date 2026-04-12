@@ -29,6 +29,7 @@ impl MigrationTrait for Migration {
                             .unique_key(),
                     )
                     .col(ColumnDef::new(Topics::NoSpacesName).string().not_null())
+                    .col(ColumnDef::new(Topics::TopicPicture).string())
                     .to_owned(),
             )
             .await
@@ -47,4 +48,5 @@ pub enum Topics {
     Id,
     Name,
     NoSpacesName,
+    TopicPicture,
 }

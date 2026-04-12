@@ -5,20 +5,34 @@ use crate::entities::{prelude::*, *};
 
 use super::get_db;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, FromQueryResult)]
 pub struct Topic {
     pub name: String,
     pub no_spaces_name: String,
+    pub topic_picture: String,
 }
 
 pub async fn create_topic(topic: Topic) -> Result<(), DbErr> {
+    let topic_picture = if topic.topic_picture.is_empty() {
+        ActiveValue::NotSet
+    } else {
+        ActiveValue::Set(topic.topic_picture.to_owned().into())
+    };
+
     let new_topic = topics::ActiveModel {
         name: ActiveValue::Set(topic.name.to_owned()),
         no_spaces_name: ActiveValue::Set(topic.no_spaces_name.to_owned()),
+        topic_picture,
         ..Default::default()
     };
 
     let _res = Topics::insert(new_topic).exec(get_db()).await?;
 
     Ok(())
+}
+
+pub async fn get_all_topics() -> Result<Vec<Topic>, DbErr> {
+    let topics = Topics::find().into_model::<Topic>().all(get_db()).await?;
+
+    Ok(topics)
 }
