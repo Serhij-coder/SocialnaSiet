@@ -1,3 +1,5 @@
+use std::env;
+
 use argon2::{
     Argon2,
     password_hash::{PasswordHash, PasswordHasher, SaltString, rand_core::OsRng},
@@ -13,10 +15,15 @@ pub struct TestUser {
     username: String,
 }
 
-use crate::db::users::{User, create_user, is_user};
+use crate::db;
+use crate::db::users::{User, is_user};
 use crate::image::save_image;
 
-pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Value>) {
+pub async fn new_public_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Value>) {
+    create_user(Json(req), "user".to_string()).await
+}
+
+async fn create_user(Json(req): Json<User>, role: String) -> (StatusCode, Json<serde_json::Value>) {
     let username = req.username;
     let nickname = req.nickname;
     let password = req.password;
@@ -25,7 +32,7 @@ pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Va
         return message;
     }
 
-    let profile_picture = if !req.profile_picture.is_empty() {
+    let mut profile_picture = if !req.profile_picture.is_empty() {
         match save_image(req.profile_picture).await {
             Ok(str) => str,
             Err(e) => {
@@ -36,7 +43,11 @@ pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Va
             }
         }
     } else {
-        "".to_string()
+        "pfp".to_string()
+    };
+
+    if role.as_bytes() == b"admin" {
+        profile_picture = "admin".to_string()
     };
 
     let password = password.as_bytes();
@@ -70,9 +81,10 @@ pub async fn new_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Va
         password: password_hash,
         nickname,
         profile_picture,
+        role,
     };
 
-    let is_created = create_user(new_user).await;
+    let is_created = db::users::create_user(new_user).await;
 
     match is_created {
         Ok(_) => (),
@@ -110,7 +122,7 @@ pub async fn check_username_availability(
 
     let message = format!("Username is alredy taken for username {username}");
 
-    let is_user = is_user(username).await;
+    let is_user = is_user(username.as_ref()).await;
 
     match is_user {
         Err(_) => (
@@ -122,6 +134,28 @@ pub async fn check_username_availability(
             Json(json!({"Error": message})),
         ),
         Ok(false) => (StatusCode::OK, Json(json!({"OK": "Username is available"}))),
+    }
+}
+
+pub async fn init_admin_user() -> Result<String, ()> {
+    if let Ok(true) = is_user("admin").await {
+        Ok("Admin user alredy exist :)".to_string())
+    } else {
+        let user = User {
+            username: "admin".to_string(),
+            password: env::var("ADMIN_PASSWORD").unwrap(),
+            nickname: "Admin".to_string(),
+            role: "".to_string(),
+            profile_picture: "".to_string(),
+        };
+        let (status, response) = create_user(Json(user), "admin".to_string()).await;
+        if status == StatusCode::OK {
+            Ok("Successfully created admin user".to_string())
+        } else {
+            // Log the error from the JSON if needed
+            println!("Failed to create admin: {:?}", response);
+            Err(())
+        }
     }
 }
 

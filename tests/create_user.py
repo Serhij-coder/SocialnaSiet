@@ -13,6 +13,7 @@ def create_user(username, password, nickname):
         "username": username,
         "password": password,
         "nickname": nickname,
+        "role": "",
         "profile_picture": image,
     }
 

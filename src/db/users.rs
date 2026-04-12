@@ -10,6 +10,7 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub nickname: String,
+    pub role: String,
     pub profile_picture: String,
 }
 
@@ -24,6 +25,7 @@ pub async fn create_user(user: User) -> Result<(), DbErr> {
         username: ActiveValue::Set(user.username.to_owned()),
         password: ActiveValue::Set(user.password.to_owned()),
         nickname: ActiveValue::Set(user.nickname.to_owned()),
+        role: ActiveValue::Set(user.role.to_owned()),
         profile_picture,
         ..Default::default()
     };
@@ -33,7 +35,7 @@ pub async fn create_user(user: User) -> Result<(), DbErr> {
     Ok(())
 }
 
-pub async fn is_user(username: String) -> Result<bool, DbErr> {
+pub async fn is_user(username: &str) -> Result<bool, DbErr> {
     let user = Users::find()
         .filter(users::Column::Username.eq(username))
         .count(get_db())

@@ -11,6 +11,7 @@ pub struct Model {
     pub username: String,
     pub password: String,
     pub nickname: String,
+    pub role: String,
     pub profile_picture: Option<String>,
 }
 

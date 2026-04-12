@@ -30,6 +30,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Users::Password).string().not_null())
                     .col(ColumnDef::new(Users::Nickname).string().not_null())
+                    .col(ColumnDef::new(Users::Role).string().not_null())
                     .col(ColumnDef::new(Users::ProfilePicture).string())
                     .to_owned(),
             )
@@ -50,5 +51,6 @@ pub enum Users {
     Username,
     Password,
     Nickname,
+    Role,
     ProfilePicture,
 }

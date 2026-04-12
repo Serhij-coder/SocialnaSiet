@@ -22,7 +22,7 @@ mod entities;
 mod image;
 
 use api::topics::{get_topics, new_topic};
-use api::users::{check_username_availability, new_user};
+use api::users::{check_username_availability, init_admin_user, new_public_user};
 
 use serde::Deserialize;
 
@@ -36,6 +36,12 @@ fn check_env_vars() {
         .expect("Failed to load DATABASE_URL. Ensure variable DATABASE_URL exist in .env");
 
     env::var("DATA_DIR").expect("Failed to load DATA_DIR. Ensure variable DATA_DIR exist in .env");
+
+    env::var("JWT_SECRET")
+        .expect("Failed to load JWT_SECRET. Ensure variable JWT_SECRET exist in .env");
+
+    env::var("ADMIN_PASSWORD")
+        .expect("Failed to load ADMIN_PASSWORD. Ensure variable ADMIN_PASSWORD exist in .env");
 }
 
 #[tokio::main]
@@ -58,8 +64,13 @@ async fn main() {
 
     db::init_db().await;
 
+    match init_admin_user().await {
+        Ok(message) => println!("{}", message),
+        Err(_) => panic!("Failed to init admin user"),
+    }
+
     let app = Router::new()
-        .route("/create_user", post(new_user))
+        .route("/create_user", post(new_public_user))
         .route(
             "/check_username_availability",
             post(check_username_availability),
