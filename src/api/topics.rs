@@ -6,7 +6,7 @@ use serde_json::json;
 
 use crate::db::topics::Topic as DB_Topic;
 use crate::db::topics::{create_topic, get_all_topics};
-use crate::image::save_image;
+use crate::image::{ImageType, save_image};
 
 #[derive(Serialize, Deserialize)]
 pub struct Topic {
@@ -19,7 +19,7 @@ pub async fn new_topic(Json(req): Json<Topic>) -> (StatusCode, Json<serde_json::
     let no_spaces_name = name.replace(" ", "_");
 
     let topic_picture = if !req.topic_picture.is_empty() {
-        match save_image(req.topic_picture).await {
+        match save_image(req.topic_picture, ImageType::Topic).await {
             Ok(str) => str,
             Err(e) => {
                 return (
@@ -69,6 +69,7 @@ pub async fn new_topic(Json(req): Json<Topic>) -> (StatusCode, Json<serde_json::
 }
 
 pub async fn get_topics() -> (StatusCode, Json<serde_json::Value>) {
+    dbg!("Begin getting topic route");
     match get_all_topics().await {
         Ok(topics) => (StatusCode::OK, Json(json!(topics))),
         Err(_) => (

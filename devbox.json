@@ -6,7 +6,8 @@
     "sea-orm-cli",
     "python313",
     "python313Packages.grequests",
-    "rainfrog@latest"
+    "rainfrog@latest",
+    "hurl@latest"
   ],
   "shell": {
     "init_hook": [

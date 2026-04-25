@@ -35,6 +35,36 @@ pub async fn create_user(user: User) -> Result<(), DbErr> {
     Ok(())
 }
 
+pub async fn get_user_password(username: &str) -> Result<String, ()> {
+    let password = Users::find()
+        .filter(users::Column::Username.eq(username))
+        .one(get_db())
+        .await;
+
+    let password = match password {
+        Ok(c) => c,
+        Err(_) => return Err(()),
+    };
+
+    let password = match password {
+        Some(p) => p,
+        None => return Err(()),
+    };
+
+    Ok(password.password)
+}
+pub async fn get_user_id(username: &str) -> Result<i32, ()> {
+    match Users::find()
+        .filter(users::Column::Username.eq(username))
+        .one(get_db())
+        .await
+        .map_err(|_| ())?
+    {
+        Some(s) => Ok(s.id),
+        None => Err(()),
+    }
+}
+
 pub async fn is_user(username: &str) -> Result<bool, DbErr> {
     let user = Users::find()
         .filter(users::Column::Username.eq(username))

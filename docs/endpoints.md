@@ -6,15 +6,55 @@
 ```json
 ```
 
+### Login
+**Post**
+`/login`
+Take credentials (`username` `password`) and return JWT token if allowed and error if not
+Example request:
+```http
+POST http://url.com/login
+{
+	"username": "admin",
+	"password": "admin1234"
+}
+```
+Example response succes:
+```http
+HTTP/1.1 200 OK
+{
+	"Ok": "You succesfully logged in",
+	"JWT": "<Your JWT token>,
+}
+```
+Example response wrong credentials:
+```http
+HTTP/1.1 401 UNATHORIZED
+{
+	"Error": "Wrong credentials"
+}
+```
+Example response failure:
+```http
+HTTP/1.1 500 INTERNAL_SERVER_ERROR
+{
+	"Error": "Something went wrong"
+}
+```
+
 ### Create topic
 **POST**
 `/create_topic`
 Create topic with given `name` and optionaly encoded image `image`. See [[Images]]
+Require logined user
 Example request:
-```json
+```http
+POST /create_topic HTTP/1.1
+Host: url.com
+Authorization: <jwt_token>
+Content-Type: application/json
 {
-	"name": "Space",
-	"topic_picture": "<b64_encoded_image>"
+    "name": "Space",
+    "topic_picture": "<b64_encoded_image>"
 }
 ```
 
@@ -36,4 +76,23 @@ Example response:
 		"topic_picture":"41f07f81-27db-4698-9d02-38f3cdc502a1"
 	}
 ]
+```
+
+## Chat
+### Append message
+**POST**
+`/append_message`
+Append message to given topic chat
+Can contain optional image or message, will be ignored if image and messge will be empty.
+Require logined user
+```http
+POST /create_topic HTTP/1.1
+Host: url.com
+Authorization: <jwt_token>
+Content-Type: application/json
+{
+    "topic": "Cars",
+    "message": "<Your message>",
+    "image": "<b64 encoded image>"
+}
 ```

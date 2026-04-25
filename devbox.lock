@@ -33,6 +33,54 @@
         }
       }
     },
+    "hurl@latest": {
+      "last_modified": "2026-03-21T07:29:51Z",
+      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#hurl",
+      "source": "devbox-search",
+      "version": "7.1.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4xj22g1chxn0l9zbqicqmwws73vry7h9-hurl-7.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4xj22g1chxn0l9zbqicqmwws73vry7h9-hurl-7.1.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/fp9imnrg081cphjx8xl2032cngxssdif-hurl-7.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/fp9imnrg081cphjx8xl2032cngxssdif-hurl-7.1.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2w2mlyxxkngq8fqaflarbxpahg7p2d3a-hurl-7.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2w2mlyxxkngq8fqaflarbxpahg7p2d3a-hurl-7.1.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xnjs230k5jldcd3vl70dr0g3qjx46yga-hurl-7.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xnjs230k5jldcd3vl70dr0g3qjx46yga-hurl-7.1.0"
+        }
+      }
+    },
     "postgresql_18": {
       "plugin_version": "0.0.2",
       "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9#postgresql_18",

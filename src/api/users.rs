@@ -1,8 +1,8 @@
 use std::env;
 
 use argon2::{
-    Argon2,
-    password_hash::{PasswordHash, PasswordHasher, SaltString, rand_core::OsRng},
+    Argon2, PasswordVerifier,
+    password_hash::{Error, PasswordHash, PasswordHasher, SaltString, rand_core::OsRng},
 };
 use axum::Json;
 use axum::http::StatusCode;
@@ -15,9 +15,9 @@ pub struct TestUser {
     username: String,
 }
 
-use crate::db;
-use crate::db::users::{User, is_user};
+use crate::db::users::{User, get_user_password, is_user};
 use crate::image::save_image;
+use crate::{db, image::ImageType};
 
 pub async fn new_public_user(Json(req): Json<User>) -> (StatusCode, Json<serde_json::Value>) {
     create_user(Json(req), "user".to_string()).await
@@ -33,7 +33,7 @@ async fn create_user(Json(req): Json<User>, role: String) -> (StatusCode, Json<s
     }
 
     let mut profile_picture = if !req.profile_picture.is_empty() {
-        match save_image(req.profile_picture).await {
+        match save_image(req.profile_picture, ImageType::Pfp).await {
             Ok(str) => str,
             Err(e) => {
                 return (
@@ -135,6 +135,19 @@ pub async fn check_username_availability(
         ),
         Ok(false) => (StatusCode::OK, Json(json!({"OK": "Username is available"}))),
     }
+}
+
+pub async fn check_credentials(username: &str, password: &str) -> Result<bool, ()> {
+    let hashed_password = db::users::get_user_password(username).await?;
+
+    let parsed_hash = match PasswordHash::new(&hashed_password) {
+        Ok(h) => h,
+        Err(_) => return Err(()),
+    };
+
+    Ok(Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok())
 }
 
 pub async fn init_admin_user() -> Result<String, ()> {

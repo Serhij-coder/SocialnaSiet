@@ -1,16 +1,17 @@
 use axum::{
     Router,
-    extract::Query,
-    http::{Method, header::CONTENT_TYPE},
-    response::sse::{Event, Sse},
+    http::{
+        Method,
+        header::{AUTHORIZATION, CONTENT_TYPE},
+    },
+    middleware::from_fn,
     routing::{get, post},
 };
-use futures_util::Stream;
+use dashmap::DashMap;
 use tokio::net::TcpListener;
-use tokio_stream::StreamExt as _;
 
 use dotenvy::dotenv;
-use std::{convert::Infallible, env, time::Duration};
+use std::{env, panic, sync::Arc};
 use tower_http::{
     cors::{Any, CorsLayer},
     services::ServeDir,
@@ -21,31 +22,36 @@ mod db;
 mod entities;
 mod image;
 
+use api::auth::{check_jwt, login};
 use api::topics::{get_topics, new_topic};
 use api::users::{check_username_availability, init_admin_user, new_public_user};
 
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-struct TopicPagination {
-    topic: String,
-}
+use crate::api::chat::{ChatState, append_message_route, get_ignored_message, sse_handler};
 
 fn check_env_vars() {
     env::var("DATABASE_URL")
         .expect("Failed to load DATABASE_URL. Ensure variable DATABASE_URL exist in .env");
 
-    env::var("DATA_DIR").expect("Failed to load DATA_DIR. Ensure variable DATA_DIR exist in .env");
+    let data_dir = env::var("DATA_DIR")
+        .expect("Failed to load DATA_DIR. Ensure variable DATA_DIR exist in .env");
+    if data_dir == "/" {
+        panic!("DATA_DIR can't be \"/\"");
+    }
 
     env::var("JWT_SECRET")
         .expect("Failed to load JWT_SECRET. Ensure variable JWT_SECRET exist in .env");
 
     env::var("ADMIN_PASSWORD")
         .expect("Failed to load ADMIN_PASSWORD. Ensure variable ADMIN_PASSWORD exist in .env");
+
+    env::var("CONNECTION_TEST_CHAT_STRING")
+        .expect("Failed to load CONNECTION_TEST_CHAT_STRING. Ensure variable CONNECTION_TEST_CHAT_STRING exist in .env");
 }
 
 #[tokio::main]
 async fn main() {
+    println!("========Socialna Siet========");
+
     dotenv().expect("Error loading .env file. Ensure .env file exist");
     check_env_vars();
 
@@ -55,10 +61,14 @@ async fn main() {
         panic!("Failed to create DATA_DIR at {}: {}", data_dir, e);
     }
 
+    let shared_state = Arc::new(ChatState {
+        stream: DashMap::new(),
+    });
+
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods([Method::GET, Method::POST])
-        .allow_headers([CONTENT_TYPE]);
+        .allow_headers([CONTENT_TYPE, AUTHORIZATION]);
 
     tracing_subscriber::fmt::init();
 
@@ -70,14 +80,19 @@ async fn main() {
     }
 
     let app = Router::new()
+        .route("/create_topic", post(new_topic))
+        .route("/append_message", post(append_message_route))
+        .layer(from_fn(check_jwt))
         .route("/create_user", post(new_public_user))
         .route(
             "/check_username_availability",
             post(check_username_availability),
         )
-        .route("/create_topic", post(new_topic))
         .route("/get_topics", get(get_topics))
-        .route("/stream", get(sse_handler))
+        .route("/get_ignored_message", get(get_ignored_message))
+        .route("/login", post(login))
+        .route("/chat", get(sse_handler))
+        .with_state(shared_state)
         .nest_service("/res", ServeDir::new(data_dir))
         .layer(cors);
 
@@ -88,20 +103,4 @@ async fn main() {
     );
 
     axum::serve(listener, app).await.unwrap();
-}
-
-async fn sse_handler(
-    Query(params): Query<TopicPagination>,
-) -> Sse<impl Stream<Item = std::result::Result<Event, Infallible>>> {
-    let topic = params.topic;
-    println!("Client requested topic: {}", topic);
-
-    let stream =
-        tokio_stream::wrappers::IntervalStream::new(tokio::time::interval(Duration::from_secs(1)))
-            .map(move |_| {
-                let data = format!("New update for {}", topic);
-                Ok(Event::default().data(data))
-            });
-
-    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
 }

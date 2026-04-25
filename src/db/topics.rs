@@ -32,7 +32,21 @@ pub async fn create_topic(topic: Topic) -> Result<(), DbErr> {
 }
 
 pub async fn get_all_topics() -> Result<Vec<Topic>, DbErr> {
+    dbg!("Try to get topics");
     let topics = Topics::find().into_model::<Topic>().all(get_db()).await?;
+    dbg!("Topics SELECTED succesfully");
 
     Ok(topics)
+}
+
+pub async fn get_topic_id(topic: &str) -> Result<i32, ()> {
+    match Topics::find()
+        .filter(topics::Column::Name.eq(topic))
+        .one(get_db())
+        .await
+        .map_err(|_| ())?
+    {
+        Some(s) => Ok(s.id),
+        None => Err(()),
+    }
 }

@@ -1,10 +1,26 @@
-use axum::Json;
+use argon2::password_hash::rand_core::Error;
+use axum::{
+    Json,
+    http::{Request, StatusCode, header},
+    middleware::Next,
+    response::Response,
+};
 use chrono;
-use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use jsonwebtoken::{TokenData, errors::ErrorKind as jErrKind};
+use sea_orm::sqlx::decode;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::env;
 
+use crate::api::users::{self, check_credentials};
 use crate::db::users::User;
+
+#[derive(Serialize, Deserialize)]
+pub struct Login {
+    pub username: String,
+    pub password: String,
+}
 
 #[derive(Serialize, Deserialize)]
 struct Claims {
@@ -13,7 +29,51 @@ struct Claims {
     role: String,
 }
 
-pub async fn login(Json(req): Json<User>) {}
+pub async fn login(Json(req): Json<Login>) -> (StatusCode, Json<serde_json::Value>) {
+    let username = req.username;
+    let password = req.password;
+
+    println!("Login");
+
+    match check_credentials(&username, &password).await {
+        Ok(c) => match c {
+            true => {
+                let jwt = if username == "admin" {
+                    create_jwt(username, "admin".to_string())
+                } else {
+                    create_jwt(username, "user".to_string())
+                };
+                if jwt.is_err() {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"Error": "Something went wrong"})),
+                    );
+                }
+
+                (
+                    StatusCode::OK,
+                    Json(json!({
+                        "Ok": "You succesfully logged in",
+                        "JWT": jwt.unwrap(),
+                    })),
+                )
+            }
+            false => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"Error": "Wrong credentials"})),
+            ),
+        },
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"Error": "Something went wrong"})),
+        ),
+    }
+
+    // (
+    //     StatusCode::INTERNAL_SERVER_ERROR,
+    //     Json(json!({"Error": "Something went wrong"})),
+    // )
+}
 
 fn create_jwt(username: String, role: String) -> Result<String, jsonwebtoken::errors::Error> {
     let expiration = chrono::Utc::now()
@@ -34,4 +94,81 @@ fn create_jwt(username: String, role: String) -> Result<String, jsonwebtoken::er
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
     )
+}
+
+fn decode_jwt(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
+    let secret = env::var("JWT_SECRET").unwrap(); //Env vars are checked on start of program, it's unlikely to fail
+
+    match decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(secret.as_bytes()),
+        &Validation::default(),
+    ) {
+        Ok(decoded_data) => {
+            dbg!(&decoded_data.header);
+            dbg!(&decoded_data.claims.role);
+            dbg!(&decoded_data.claims.sub);
+            dbg!(&decoded_data.claims.exp);
+            Ok(decoded_data)
+        }
+        Err(e) => Err(e),
+    }
+}
+
+fn construct_error(message: &str) -> (StatusCode, Json<serde_json::Value>) {
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(json!({"Error": format!("{}", message)})),
+    )
+}
+
+pub async fn check_jwt(
+    mut req: Request<axum::body::Body>,
+    next: Next,
+) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
+    let auth_header = req
+        .headers()
+        .get("authorization")
+        .and_then(|h| h.to_str().ok());
+
+    if let Some(auth) = auth_header {
+        let jwt_data = match decode_jwt(auth) {
+            Ok(d) => d,
+            Err(e) => match e.kind() {
+                jErrKind::InvalidToken => {
+                    return Err(construct_error("Invalid token"));
+                }
+                jErrKind::InvalidSignature => {
+                    return Err(construct_error("Invalid signature"));
+                }
+                jErrKind::MissingRequiredClaim(_) => {
+                    return Err(construct_error("Missing required claim"));
+                }
+                jErrKind::InvalidClaimFormat(_) => {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({"Error": "Invalid claim format"})),
+                    ));
+                }
+                jErrKind::ExpiredSignature => {
+                    return Err(construct_error("Token expired"));
+                }
+                _ => {
+                    return Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"Error": "Failed to decode JWT"})),
+                    ));
+                }
+            },
+        };
+
+        req.extensions_mut().insert(jwt_data.claims.sub);
+
+        return Ok(next.run(req).await);
+    }
+
+    Err((
+        StatusCode::UNAUTHORIZED,
+        Json(json!({ "Error": "Something went wrong" })),
+    ))
 }
