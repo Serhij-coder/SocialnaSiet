@@ -33,7 +33,21 @@ pub async fn create_topic(topic: Topic) -> Result<(), DbErr> {
 
 pub async fn get_all_topics() -> Result<Vec<Topic>, DbErr> {
     dbg!("Try to get topics");
-    let topics = Topics::find().into_model::<Topic>().all(get_db()).await?;
+    // 1. Query as a Raw Json Value to allow NULLs
+    let raw_topics = Topics::find().into_json().all(get_db()).await?;
+
+    // 2. Manually map the JSON into your Topic struct
+    let topics = raw_topics
+        .into_iter()
+        .map(|json| {
+            Topic {
+                name: json["name"].as_str().unwrap_or("").to_string(),
+                no_spaces_name: json["no_spaces_name"].as_str().unwrap_or("").to_string(),
+                // If it's null, we force it to ""
+                topic_picture: json["topic_picture"].as_str().unwrap_or("").to_string(),
+            }
+        })
+        .collect();
     dbg!("Topics SELECTED succesfully");
 
     Ok(topics)

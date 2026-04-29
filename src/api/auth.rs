@@ -1,6 +1,7 @@
 use argon2::password_hash::rand_core::Error;
 use axum::{
-    Json,
+    Extension, Json,
+    extract::State,
     http::{Request, StatusCode, header},
     middleware::Next,
     response::Response,
@@ -11,7 +12,7 @@ use jsonwebtoken::{TokenData, errors::ErrorKind as jErrKind};
 use sea_orm::sqlx::decode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::env;
+use std::{env, sync::Arc};
 
 use crate::api::users::{self, check_credentials};
 use crate::db::users::User;
@@ -46,7 +47,9 @@ pub async fn login(Json(req): Json<Login>) -> (StatusCode, Json<serde_json::Valu
                 if jwt.is_err() {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(json!({"Error": "Something went wrong"})),
+                        Json(
+                            json!({"Error": format!("Something went wrong: {}", jwt.err().unwrap())}),
+                        ),
                     );
                 }
 
@@ -76,9 +79,14 @@ pub async fn login(Json(req): Json<Login>) -> (StatusCode, Json<serde_json::Valu
 }
 
 fn create_jwt(username: String, role: String) -> Result<String, jsonwebtoken::errors::Error> {
+    // 1. Get lifetime from env or default to 24 hours if missing
+    let hours_str = env::var("JWT_LIFE_TIME").unwrap_or_else(|_| "2".to_string());
+    let hours = hours_str.parse::<i64>().unwrap_or(24);
+
+    // 2. Calculate expiration timestamp
     let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::hours(2))
-        .unwrap()
+        .checked_add_signed(chrono::Duration::hours(hours))
+        .expect("valid timestamp")
         .timestamp() as usize;
 
     let claims = Claims {
@@ -87,7 +95,7 @@ fn create_jwt(username: String, role: String) -> Result<String, jsonwebtoken::er
         role,
     };
 
-    let secret = env::var("JWT_SECRET").unwrap(); //Env vars are checked on start of program, it's unlikely to fail
+    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
     encode(
         &Header::default(),

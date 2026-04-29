@@ -29,3 +29,22 @@ pub async fn create_message(message: CreateMessageArgs) -> Result<(), ()> {
 
     Ok(())
 }
+
+/// Retrieves messages for a given topic, sorted by timestamp in descending order, and limited by
+/// the specified amount. 0 to get all messages.
+pub async fn get_messages(topic_id: i32, amount: u32) -> Result<Vec<chat::Model>, DbErr> {
+    if amount == 0 {
+        Chat::find()
+            .filter(chat::Column::TopicId.eq(topic_id))
+            .order_by_desc(chat::Column::Timestamp)
+            .all(get_db())
+            .await
+    } else {
+        Chat::find()
+            .filter(chat::Column::TopicId.eq(topic_id))
+            .order_by_desc(chat::Column::Timestamp)
+            .limit(amount as u64)
+            .all(get_db())
+            .await
+    }
+}

@@ -4,8 +4,8 @@ use argon2::{
     Argon2, PasswordVerifier,
     password_hash::{Error, PasswordHash, PasswordHasher, SaltString, rand_core::OsRng},
 };
-use axum::Json;
 use axum::http::StatusCode;
+use axum::{Extension, Json};
 use sea_orm::DbErr;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -15,7 +15,9 @@ pub struct TestUser {
     username: String,
 }
 
-use crate::db::users::{User, get_user_password, is_user};
+use crate::db::users::{
+    User, get_user_nickname, get_user_password, get_user_profile_picture, is_user,
+};
 use crate::image::save_image;
 use crate::{db, image::ImageType};
 
@@ -43,7 +45,7 @@ async fn create_user(Json(req): Json<User>, role: String) -> (StatusCode, Json<s
             }
         }
     } else {
-        "pfp".to_string()
+        "".to_string()
     };
 
     if role.as_bytes() == b"admin" {
@@ -115,12 +117,78 @@ async fn create_user(Json(req): Json<User>, role: String) -> (StatusCode, Json<s
     )
 }
 
+pub async fn get_user_data(
+    Extension(username): Extension<String>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let nickname = get_user_nickname(&username).await;
+    let nickname = match nickname {
+        Ok(nickname) => nickname,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"Error": e}))),
+    };
+
+    let profile_picture = get_user_profile_picture(&username).await;
+    let profile_picture = match profile_picture {
+        Ok(profile_picture) => profile_picture,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"Error": e}))),
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "nickname": nickname,
+            "pfp": profile_picture,
+            "username": username,
+        })),
+    )
+}
+
+pub async fn get_public_user_data(req: Json<TestUser>) -> (StatusCode, Json<serde_json::Value>) {
+    let username = req.username.as_ref();
+
+    let nickname = get_user_nickname(username).await;
+    let nickname = match nickname {
+        Ok(nickname) => nickname,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"Error": e}))),
+    };
+
+    let profile_picture = get_user_profile_picture(username).await;
+    let profile_picture = match profile_picture {
+        Ok(profile_picture) => profile_picture,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"Error": e}))),
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "nickname": nickname,
+            "pfp": profile_picture,
+        })),
+    )
+}
+
 pub async fn check_username_availability(
     Json(req): Json<TestUser>,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    println!(
+        "Checking username availability for username: {}",
+        req.username
+    );
     let username = req.username;
 
     let message = format!("Username is alredy taken for username {username}");
+
+    if username.trim().contains(" ") {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Username can't contain spaces"})),
+        );
+    }
+    if username.len() < 5 {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"Error": "Username length must be minimum 5 symbols"})),
+        );
+    }
 
     let is_user = is_user(username.as_ref()).await;
 

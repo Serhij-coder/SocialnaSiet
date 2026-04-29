@@ -32,6 +32,12 @@ pub async fn save_image(b64_image: String, image_type: ImageType) -> Result<Stri
         ImageType::Chat { topic_name } => format!("{}/{}/{}/", data_dir, "chat", topic_name),
     };
 
+    if let Err(e) = tokio::fs::create_dir_all(&data_dir).await {
+        dbg!(&data_dir);
+        dbg!(&e);
+        return Err(format!("Error creating directory: {}", e));
+    }
+
     let path = std::path::Path::new(&data_dir).join(&file_name);
 
     match tokio::fs::write(path, image).await {

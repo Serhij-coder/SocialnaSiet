@@ -26,7 +26,10 @@ use api::auth::{check_jwt, login};
 use api::topics::{get_topics, new_topic};
 use api::users::{check_username_availability, init_admin_user, new_public_user};
 
-use crate::api::chat::{ChatState, append_message_route, get_ignored_message, sse_handler};
+use crate::api::{
+    chat::{ChatState, append_message_route, get_ignored_message, get_messages, sse_handler},
+    users::{get_public_user_data, get_user_data},
+};
 
 fn check_env_vars() {
     env::var("DATABASE_URL")
@@ -40,6 +43,12 @@ fn check_env_vars() {
 
     env::var("JWT_SECRET")
         .expect("Failed to load JWT_SECRET. Ensure variable JWT_SECRET exist in .env");
+
+    let lifetime = env::var("JWT_LIFE_TIME")
+        .expect("Failed to load JWT_LIFE_TIME. Ensure variable JWT_LIFE_TIME exist in .env");
+    lifetime
+        .parse::<i64>()
+        .expect("Failed to parse JWT_LIFE_TIME. Ensure variable JWT_LIFE_TIME is number in .env");
 
     env::var("ADMIN_PASSWORD")
         .expect("Failed to load ADMIN_PASSWORD. Ensure variable ADMIN_PASSWORD exist in .env");
@@ -79,9 +88,15 @@ async fn main() {
         Err(_) => panic!("Failed to init admin user"),
     }
 
+    match api::topics::new_default_topic().await {
+        Ok(_) => println!("Default topic created :)"),
+        Err(e) => println!("Default topic probably exist or failed to create it: {}", e),
+    }
+
     let app = Router::new()
         .route("/create_topic", post(new_topic))
         .route("/append_message", post(append_message_route))
+        .route("/get_user_data", get(get_user_data))
         .layer(from_fn(check_jwt))
         .route("/create_user", post(new_public_user))
         .route(
@@ -89,6 +104,8 @@ async fn main() {
             post(check_username_availability),
         )
         .route("/get_topics", get(get_topics))
+        .route("/get_messages", post(get_messages))
+        .route("/get_public_user_data", post(get_public_user_data))
         .route("/get_ignored_message", get(get_ignored_message))
         .route("/login", post(login))
         .route("/chat", get(sse_handler))

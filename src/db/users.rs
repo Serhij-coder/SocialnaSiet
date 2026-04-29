@@ -53,6 +53,41 @@ pub async fn get_user_password(username: &str) -> Result<String, ()> {
 
     Ok(password.password)
 }
+
+pub async fn get_user_nickname(username: &str) -> Result<String, String> {
+    let nickname = Users::find()
+        .filter(users::Column::Username.eq(username))
+        .one(get_db())
+        .await
+        .map_err(|_| "Failed to get user nickname".to_string())?;
+
+    let nickname = match nickname {
+        Some(n) => n,
+        None => return Err("User not found".to_string()),
+    };
+
+    Ok(nickname.nickname)
+}
+
+pub async fn get_user_profile_picture(username: &str) -> Result<String, String> {
+    let profile_picture = Users::find()
+        .filter(users::Column::Username.eq(username))
+        .one(get_db())
+        .await
+        .map_err(|_| "Failed to get user profile picture".to_string())?;
+
+    let profile_picture = match profile_picture {
+        Some(p) => p,
+        None => return Err("User not found".to_string()),
+    };
+
+    let pfp = profile_picture
+        .profile_picture
+        .unwrap_or_else(|| "".to_string());
+
+    Ok(pfp)
+}
+
 pub async fn get_user_id(username: &str) -> Result<i32, ()> {
     match Users::find()
         .filter(users::Column::Username.eq(username))
@@ -63,6 +98,17 @@ pub async fn get_user_id(username: &str) -> Result<i32, ()> {
         Some(s) => Ok(s.id),
         None => Err(()),
     }
+}
+
+pub async fn get_user_username(user_id: i32) -> Result<String, String> {
+    let username = Users::find()
+        .filter(users::Column::Id.eq(user_id))
+        .one(get_db())
+        .await
+        .map_err(|e| format!("DbErr: {}", e))?
+        .ok_or("User not found".to_string())?;
+
+    Ok(username.username)
 }
 
 pub async fn is_user(username: &str) -> Result<bool, DbErr> {

@@ -22,7 +22,7 @@ use crate::{
     db::{
         chat::{CreateMessageArgs, create_message},
         topics::get_topic_id,
-        users::get_user_id,
+        users::{get_user_id, get_user_username},
     },
     image::{self, ImageType, save_image},
 };
@@ -125,12 +125,16 @@ pub async fn append_message_route(
                 Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"Error": e}))),
                 Ok(stream_message) => match state.stream.get(req.topic.as_str()) {
                     Some(tx) => match tx.send(Event::default().data(stream_message.to_string())) {
-                        Ok(_) => (
-                            StatusCode::OK,
-                            Json(
-                                json!({"Ok": "Message saved succesfully", "Okk": "Message sended succesfully"}),
-                            ),
-                        ),
+                        Ok(_) => {
+                            println!("Message sent to stream: {}", stream_message.to_string());
+                            (
+                                StatusCode::OK,
+                                Json(
+                                    json!({"Ok": "Message saved succesfully", "Okk": "Message sended succesfully"}),
+                                ),
+                            )
+                        }
+
                         Err(e) => half_err_message(e.to_string().as_str()),
                     },
                     None => half_err_message("Topic not found in streams hashmap"),
@@ -196,6 +200,7 @@ async fn append_message(
     };
 
     let stream_message = Json(json!({
+        "username": username.to_string(),
         "message": message_args.message,
         "image": message_args.image,
     }));
@@ -205,4 +210,56 @@ async fn append_message(
         .map_err(|_| "Failed write message to db".to_string())?;
 
     Ok(stream_message)
+}
+
+#[derive(Deserialize)]
+pub struct GetMessagesReq {
+    pub topic: String,
+    pub amount: u32,
+}
+
+/// Return array of messages for topic, sorted by time desc, limited by amount
+pub async fn get_messages(req: Json<GetMessagesReq>) -> (StatusCode, Json<serde_json::Value>) {
+    let topic_id = match get_topic_id(&req.topic).await {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({"Error": "Topic not found"})),
+            );
+        }
+    };
+
+    let messages = match crate::db::chat::get_messages(topic_id, req.amount).await {
+        Ok(messages) => messages,
+        Err(e) => {
+            println!("Error getting messages: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"Error": "Failed to get messages from db"})),
+            );
+        }
+    };
+
+    let mut processed_messages = Vec::new();
+    for msg in messages {
+        // Now you can properly await and return from the parent function
+        let username = match get_user_username(msg.user_id).await {
+            Ok(u) => u,
+            Err(_) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"Error": "Failed to get username from db"})),
+                );
+            }
+        };
+
+        processed_messages.push(json!({
+            "username": username,
+            "message": msg.message,
+            "image": msg.image,
+        }));
+    }
+
+    (StatusCode::OK, Json(json!(processed_messages)))
 }

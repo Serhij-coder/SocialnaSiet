@@ -68,13 +68,27 @@ pub async fn new_topic(Json(req): Json<Topic>) -> (StatusCode, Json<serde_json::
     (StatusCode::OK, Json(json!("OK: Topic created succesfuly")))
 }
 
+pub async fn new_default_topic() -> Result<(), String> {
+    let default_topic = DB_Topic {
+        name: "General".to_string(),
+        no_spaces_name: "General".to_string(),
+        topic_picture: "default".to_string(),
+    };
+
+    create_topic(default_topic)
+        .await
+        .map_err(|e| format!("Failed to create default topic: {}", e))?;
+
+    Ok(())
+}
+
 pub async fn get_topics() -> (StatusCode, Json<serde_json::Value>) {
     dbg!("Begin getting topic route");
     match get_all_topics().await {
         Ok(topics) => (StatusCode::OK, Json(json!(topics))),
-        Err(_) => (
+        Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": "Error getting topics" })),
+            Json(json!({ "error": format!("Error getting topics: {}", e) })),
         ),
     }
 }

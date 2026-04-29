@@ -1,4 +1,5 @@
-## Endpoints
+# Endpoints
+## User
 ### Create user
 - `/create_user`
 - Create user with given `username` `password` `nickname` and optionaly encoded `profile-picture`. See [[Images]]
@@ -6,6 +7,24 @@
 ```json
 ```
 
+### Get user data
+`/get_user_data`
+returt user `nickname` `pfp` `username` based on JWT
+Require logined user
+Example request:
+```http
+GET /get_user_data HTTP/1.1
+Host: url.com
+authorization: <jwt_token>
+```
+response:
+```json
+{
+	"nickname": "<nickname>",
+	"nrofile Picture": "<profile_picture>",
+	"username": "<username>",
+}
+```
 ### Login
 **Post**
 `/login`
@@ -41,6 +60,7 @@ HTTP/1.1 500 INTERNAL_SERVER_ERROR
 }
 ```
 
+## Topics
 ### Create topic
 **POST**
 `/create_topic`
@@ -50,7 +70,7 @@ Example request:
 ```http
 POST /create_topic HTTP/1.1
 Host: url.com
-Authorization: <jwt_token>
+authorization: <jwt_token>
 Content-Type: application/json
 {
     "name": "Space",
@@ -61,7 +81,7 @@ Content-Type: application/json
 ### Get all topics
 **GET**
 `/get_topics`
-Return all topics with `name` `no_spaces_name` and image name `topic_picture` which can be accesed on `/res/<img_name>` see [[Images]]
+Return all topics with `name` `no_spaces_name` and image name `topic_picture` which can be accesed on `/res/topic/<img_name>` see [[Images]]
 Example response:
 ```json
 [
@@ -88,7 +108,7 @@ Require logined user
 ```http
 POST /create_topic HTTP/1.1
 Host: url.com
-Authorization: <jwt_token>
+authorization: <jwt_token>
 Content-Type: application/json
 {
     "topic": "Cars",
@@ -96,3 +116,4 @@ Content-Type: application/json
     "image": "<b64 encoded image>"
 }
 ```
+
