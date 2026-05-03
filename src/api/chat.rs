@@ -218,7 +218,7 @@ pub struct GetMessagesReq {
     pub amount: u32,
 }
 
-/// Return array of messages for topic, sorted by time desc, limited by amount
+/// Return array of messages for topic, limited by amount
 pub async fn get_messages(req: Json<GetMessagesReq>) -> (StatusCode, Json<serde_json::Value>) {
     let topic_id = match get_topic_id(&req.topic).await {
         Ok(id) => id,
@@ -254,11 +254,14 @@ pub async fn get_messages(req: Json<GetMessagesReq>) -> (StatusCode, Json<serde_
             }
         };
 
-        processed_messages.push(json!({
-            "username": username,
-            "message": msg.message,
-            "image": msg.image,
-        }));
+        processed_messages.insert(
+            0,
+            json!({
+                "username": username,
+                "message": msg.message,
+                "image": msg.image,
+            }),
+        );
     }
 
     (StatusCode::OK, Json(json!(processed_messages)))
