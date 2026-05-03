@@ -107,20 +107,11 @@ fn create_jwt(username: String, role: String) -> Result<String, jsonwebtoken::er
 fn decode_jwt(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
     let secret = env::var("JWT_SECRET").unwrap(); //Env vars are checked on start of program, it's unlikely to fail
 
-    match decode::<Claims>(
+    decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),
-    ) {
-        Ok(decoded_data) => {
-            dbg!(&decoded_data.header);
-            dbg!(&decoded_data.claims.role);
-            dbg!(&decoded_data.claims.sub);
-            dbg!(&decoded_data.claims.exp);
-            Ok(decoded_data)
-        }
-        Err(e) => Err(e),
-    }
+    )
 }
 
 fn construct_error(message: &str) -> (StatusCode, Json<serde_json::Value>) {
