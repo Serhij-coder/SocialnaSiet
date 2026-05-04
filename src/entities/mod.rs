@@ -3,5 +3,6 @@
 pub mod prelude;
 
 pub mod chat;
+pub mod posts;
 pub mod topics;
 pub mod users;
