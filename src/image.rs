@@ -9,6 +9,7 @@ pub enum ImageType {
     Pfp,
     Topic,
     Chat { topic_name: String },
+    Post { topic_name: String },
 }
 
 /// Save image to disc and return it name or error message
@@ -30,6 +31,7 @@ pub async fn save_image(b64_image: String, image_type: ImageType) -> Result<Stri
         ImageType::Pfp => format!("{}/{}/", data_dir, "pfp"),
         ImageType::Topic => format!("{}/{}/", data_dir, "topic"),
         ImageType::Chat { topic_name } => format!("{}/{}/{}/", data_dir, "chat", topic_name),
+        ImageType::Post { topic_name } => format!("{}/{}/{}/", data_dir, "post", topic_name),
     };
 
     if let Err(e) = tokio::fs::create_dir_all(&data_dir).await {

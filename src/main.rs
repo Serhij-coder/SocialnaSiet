@@ -28,6 +28,7 @@ use api::users::{check_username_availability, init_admin_user, new_public_user};
 
 use crate::api::{
     chat::{ChatState, append_message_route, get_ignored_message, get_messages, sse_handler},
+    posts::{create_post_route, get_posts_route},
     users::{get_public_user_data, get_user_data},
 };
 
@@ -97,6 +98,7 @@ async fn main() {
         .route("/create_topic", post(new_topic))
         .route("/append_message", post(append_message_route))
         .route("/get_user_data", get(get_user_data))
+        .route("/create_post", post(create_post_route))
         .layer(from_fn(check_jwt))
         .route("/create_user", post(new_public_user))
         .route(
@@ -109,6 +111,7 @@ async fn main() {
         .route("/get_ignored_message", get(get_ignored_message))
         .route("/login", post(login))
         .route("/chat", get(sse_handler))
+        .route("/get_posts", post(get_posts_route))
         .with_state(shared_state)
         .nest_service("/res", ServeDir::new(data_dir))
         .layer(cors);

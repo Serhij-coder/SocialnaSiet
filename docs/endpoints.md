@@ -106,7 +106,7 @@ Append message to given topic chat
 Can contain optional image or message, will be ignored if image and messge will be empty.
 Require logined user
 ```http
-POST /create_topic HTTP/1.1
+POST /append_message HTTP/1.1
 Host: url.com
 authorization: <jwt_token>
 Content-Type: application/json
@@ -115,5 +115,74 @@ Content-Type: application/json
     "message": "<Your message>",
     "image": "<b64 encoded image>"
 }
+```
+
+### Get messages
+**POST**
+`/get_messages`
+Get messages from topic chat
+```http
+POST /get_messages HTTP/1.1
+Host: url.com
+Content-Type: application/json
+{
+    "topic": "Cars",
+    "amount": 10
+}
+```
+Example response:
+```json
+[
+    {
+        "username": "user1",
+        "message": "Hello",
+        "image": "img.png"
+    }
+]
+```
+
+## Posts
+### Create post
+**POST**
+`/create_post`
+Create post in given topic with header, content, and optional image.
+Require logined user
+```http
+POST /create_post HTTP/1.1
+Host: url.com
+authorization: <jwt_token>
+Content-Type: application/json
+{
+    "topic": "Cars",
+    "header": "<Post header>",
+    "content": "<Post content>",
+    "image": "<b64 encoded image>"
+}
+```
+
+### Get posts
+**POST**
+`/get_posts`
+Get posts from topic
+```http
+POST /get_posts HTTP/1.1
+Host: url.com
+Content-Type: application/json
+{
+    "topic": "Cars",
+    "amount": 10
+}
+```
+Example response:
+```json
+[
+    {
+        "username": "user1",
+        "header": "Post header",
+        "content": "Post content",
+        "image": "img.png",
+        "timestamp": "2026-01-01T12:00:00"
+    }
+]
 ```
 
